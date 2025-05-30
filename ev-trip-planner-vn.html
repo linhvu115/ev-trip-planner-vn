@@ -1,80 +1,86 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>EV Trip Planner Vietnam</title>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6gZ_u4FNBsBgag81dr43oK6VKg7u6zQM&libraries=places"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #0077cc; }
-    label, select, input, button { display: block; margin: 10px 0; }
-    #results { margin-top: 20px; background: #f5f5f5; padding: 10px; border-radius: 8px; }
-  </style>
+	<meta charset="UTF-8"/>
+	<title>EV Trip Planner Vietnam</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6gZ_u4FNBsBgag81dr43oK6VKg7u6zQM&libraries=places"></script>
+	<style>
+		body {font-family: Arial, sans-serif; margin: 20px; background: #f7fafc;}
+		h1 {color: #0077cc;}
+		label, select, input, button {display: block; margin: 10px 0; font-size: 16px;}
+		#results {margin-top: 20px; background: #f5f5f5; padding: 10px; border-radius: 8px;}
+		.container {max-width: 500px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px #0001; padding: 30px;}
+		button {background: #0077cc; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer;}
+		button:hover {background: #005fa3;}
+	</style>
 </head>
+
 <body>
-  <h1>EV Trip Planner - Việt Nam</h1>
-  <label for="start">Điểm xuất phát:</label>
-  <input type="text" id="start" placeholder="Nhập địa chỉ bắt đầu" />
+	<div class="container">
+		<h1>EV Trip Planner – Việt Nam</h1>
+		<label for="start">Điểm xuất phát:</label>
+		<input type="text" id="start" placeholder="Nhập địa chỉ bắt đầu"/>
+		
+		<label for="end">Điểm đến:</label>
+		<input type="text" id="end" placeholder="Nhập địa chỉ điểm đến"/>
+		
+		<label for="waypoint">Thêm điểm dừng (tuỳ chọn):</label>
+		<input type="text" id="waypoint" placeholder="Nhập điểm dừng giữa chặng"/>
+		
+		<label for="vehicle">Chọn dòng xe BYD:</label>
+		<select id="vehicle">
+			<option value="seal">BYD Seal (82 kWh)</option>
+			<option value="atto3">BYD Atto 3 (60 kWh)</option>
+			<option value="dolphin">BYD Dolphin (45 kWh)</option>
+		</select>
 
-  <label for="end">Điểm đến:</label>
-  <input type="text" id="end" placeholder="Nhập địa chỉ điểm đến" />
+		<label for="battery">Mức pin hiện tại (%):</label>
+		<input type="number" id="battery" min="0" max="100" value="80"/>
 
-  <!-- Thêm điểm dừng (optional) -->
-  <label for="waypoint">Thêm điểm dừng (tuỳ chọn):</label>
-  <input type="text" id="waypoint" placeholder="Nhập điểm dừng giữa đường" />
+    <button onclick="calculateTrip()">Lên kế hoạch hành trình</button>
+    <div id="results"></div>
+	</div>
 
-  <label for="vehicle">Chọn loại xe BYD:</label>
-  <select id="vehicle">
-    <option value="seal">BYD Seal (82 kWh)</option>
-    <option value="atto3">BYD Atto 3 (60 kWh)</option>
-    <option value="dolphin">BYD Dolphin (45 kWh)</option>
-  </select>
-
-  <label for="battery">Mức pin hiện tại (%):</label>
-  <input type="number" id="battery" min="0" max="100" value="80" />
-
-  <button onclick="calculateTrip()">Lên kế hoạch hành trình</button>
-  <div id="results"></div>
-
-  <script>
+	<script>
     // Gợi ý địa điểm bằng Google Places API
-    function initAutocomplete() {
-      new google.maps.places.Autocomplete(document.getElementById('start'), { componentRestrictions: { country: 'vn' } });
-      new google.maps.places.Autocomplete(document.getElementById('end'), { componentRestrictions: { country: 'vn' } });
-      new google.maps.places.Autocomplete(document.getElementById('waypoint'), { componentRestrictions: { country: 'vn' } });
-    }
+		function initAutocomplete() {
+			new google.maps.places.Autocomplete(document.getElementById('start'), {componentRestrictions: {country: 'vn'}});
+			new google.maps.places.Autocomplete(document.getElementById('end'), {componentRestrictions: {country: 'vn'}});
+			new google.maps.places.Autocomplete(document.getElementById('waypoint'), {componentRestrictions: {country: 'vn'}});
+		}
+		window.onload = initAutocomplete;
+		
+		const vehicleRange = {
+			seal: 520, // km full charge
+			atto3: 420,
+			dolphin: 340
+		};
 
-    window.onload = initAutocomplete;
-
-    const vehicleRange = {
-      seal: 520, // km full charge
-      atto3: 420,
-      dolphin: 340
-    };
-
-    function calculateTrip() {
-      const start = document.getElementById("start").value;
-      const end = document.getElementById("end").value;
-      const waypoint = document.getElementById("waypoint").value;
-      const vehicle = document.getElementById("vehicle").value;
-      const battery = parseInt(document.getElementById("battery").value);
-
-      if (!start || !end || isNaN(battery)) {
-        alert("Vui lòng nhập đầy đủ thông tin");
-        return;
-      }
-
-      const range = (vehicleRange[vehicle] * battery) / 100;
-
-      let results = `<strong>Kết quả dự kiến:</strong><br>
+		function calculateTrip() {
+			const start = document.getElementById("start").value;
+			const end = document.getElementById("end").value;
+			const waypoint = document.getElementById("waypoint").value;
+			const vehicle = document.getElementById("vehicle").value;
+			const battery = parseInt(document.getElementById("battery").value);
+			
+			if (!start || !end || isNaN(battery)) {
+				alert("Vui lòng nhập đầy đủ thông tin");
+				return;
+			}
+			const range = (vehicleRange[vehicle] * battery) / 100;
+			let results = `<strong>Kết quả dự kiến:</strong><br>
         Xe: ${vehicle.toUpperCase()}<br>
         Mức pin hiện tại: ${battery}%<br>
         Tầm hoạt động tối đa còn lại: <strong>${range.toFixed(1)} km</strong><br>
         <em>* Bạn cần kiểm tra khoảng cách từ ${start} ${waypoint ? '-> ' + waypoint : ''} -> ${end} trên Google Maps để biết có cần sạc giữa đường không.</em>
       `;
-
       document.getElementById("results").innerHTML = results;
-    }
-  </script>
+		}
+		
+	</script>
+	
 </body>
+	
 </html>
